@@ -6,8 +6,10 @@ Windows 桌面工具：确认自己在《无畏契约》国服对局中死亡后
 
 ## 下载与启动
 
-1. 从 [Releases](https://github.com/MuffinHeadOo/valorant-death-switcher/releases/latest) 下载 `ValorantDeathSwitcher-v0.1.0-win-x64.zip` 并解压。不要只取出 EXE；它需要同文件夹中的 `_internal` 依赖。
-2. 双击 `ValorantDeathSwitcher/ValorantDeathSwitcher.exe`。需要 Windows x64 和 Microsoft Edge。
+1. 从 [Releases](https://github.com/MuffinHeadOo/valorant-death-switcher/releases/latest) 选择下载：
+   - **单文件版** `ValorantDeathSwitcher-v0.1.0-standalone.exe`：直接运行，首次启动会先解压依赖，可能较慢。
+   - **文件夹版** `ValorantDeathSwitcher-v0.1.0-win-x64.zip`：解压后运行 `ValorantDeathSwitcher/ValorantDeathSwitcher.exe`。不要只取出其中的 EXE；它需要旁边的 `_internal` 文件夹。
+2. 需要 Windows x64 和 Microsoft Edge。启动所选版本。
 3. 检查“抖音网址”和“日志路径”。日志路径留空时，程序自动寻找国服 `ShooterGame.log`；找不到时可点击“选择文件”。
 4. 勾选“自动切屏”，点击“开始运行”。停止时点击“停止运行”。未勾选“自动切屏”时只记录识别事件，适合先检查当前游戏设置下的识别效果。
 
@@ -71,10 +73,13 @@ py -3.12 -m venv .venv-official
 ```powershell
 & .\.venv-official\Scripts\python.exe -m pytest -q
 & .\build.ps1
+& .\build-onefile.ps1
 ```
 
-打包输出位于 `dist/ValorantDeathSwitcher/`。其中 `local-data/` 为本机测试样本与开发环境，不进入 Git 仓库或发布包；缺少本机原始截图时，对应回放测试会跳过。发布时压缩整个 `ValorantDeathSwitcher` 文件夹，并将压缩包放入 GitHub Release。
+文件夹版输出位于 `dist/ValorantDeathSwitcher/`，单文件版输出位于 `dist-onefile/`。其中 `local-data/` 为本机测试样本与开发环境，不进入 Git 仓库或发布包；缺少本机原始截图时，对应回放测试会跳过。发布时可将两个版本都放入 GitHub Release。
 
 本项目为非官方工具，与 Riot Games、腾讯、抖音及 Microsoft 无关联。
 
 本仓库当前未添加开源许可证；如需复用或再发布源码，请先联系仓库所有者。
+
+联系邮箱：[1608175635@qq.com](mailto:1608175635@qq.com)。

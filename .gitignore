@@ -10,6 +10,7 @@ dist-*/
 release/
 *.spec
 !ValorantDeathSwitcher.spec
+!ValorantDeathSwitcherOneFile.spec
 *.egg-info/
 local-data/
 *.log
