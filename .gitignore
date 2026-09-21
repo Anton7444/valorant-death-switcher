@@ -1,0 +1,15 @@
+.venv/
+.venv-official/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+build-*/
+dist/
+dist-*/
+release/
+*.spec
+!ValorantDeathSwitcher.spec
+*.egg-info/
+local-data/
+*.log
