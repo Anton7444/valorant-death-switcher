@@ -1,4 +1,4 @@
-"""Visible game/Edge window discovery and foreground changes."""
+"""Visible game/Chrome window discovery and foreground changes."""
 
 from __future__ import annotations
 
@@ -157,10 +157,14 @@ def activate(hwnd: int, *, timeout: float = 1.0) -> bool:
 
 
 def find_edge_exe() -> Path | None:
-    paths = (
-        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
-        Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
-    )
+    """Locate Google Chrome (the name is historical; the app now drives Chrome)."""
+    local = os.environ.get("LOCALAPPDATA")
+    paths = [
+        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+    ]
+    if local:
+        paths.append(Path(local) / "Google" / "Chrome" / "Application" / "chrome.exe")
     return next((p for p in paths if p.is_file()), None)
 
 
@@ -169,14 +173,14 @@ class EdgeWindow:
         self.hwnd: int | None = None
         self.pid: int | None = None
         self.url: str | None = None
-        profile = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ValorantDeathSwitcher" / "edge-profile"
+        profile = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ValorantDeathSwitcher" / "chrome-profile"
         self.devtools = EdgeDevTools(profile)
         self.topmost = False
         self.last_focus_ms: int | None = None
         self.prewarm_attempted = False
 
     def prewarm(self) -> bool:
-        """Start the dedicated Edge process without opening a window or page."""
+        """Start the dedicated Chrome process without opening a window or page."""
         if self.devtools._read_port():
             return True
         if self.prewarm_attempted:
@@ -211,7 +215,7 @@ class EdgeWindow:
             return False, "未打开过Threads页面，无法暂停视频"
         try:
             if not self.devtools._read_port():
-                return False, "Edge 页面连接已断开，无法暂停视频"
+                return False, "Chrome 页面连接已断开，无法暂停视频"
             return self.devtools.pause_video(self.url)
         except DevToolsError as exc:
             return False, str(exc)
@@ -238,14 +242,14 @@ class EdgeWindow:
     def restore_after_failed_game_switch(self) -> tuple[bool, str]:
         if self.hwnd and win32gui.IsWindow(self.hwnd):
             return self._focus(opened=False)
-        return False, "Edge 窗口已关闭，无法恢复"
+        return False, "Chrome 窗口已关闭，无法恢复"
 
     def _focus(self, opened: bool, *, fast: bool = False) -> tuple[bool, str]:
         assert self.hwnd is not None
         self._maximize(self.hwnd)
         focus_timeout = 0.08 if fast else 1.0
         if activate(self.hwnd, timeout=focus_timeout):
-            return True, "已打开并切到 Edge" if opened else "已切到 Edge 专用窗口"
+            return True, "已打开并切到 Chrome" if opened else "已切到 Chrome 专用窗口"
         try:
             win32gui.SetWindowPos(
                 self.hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
@@ -253,13 +257,13 @@ class EdgeWindow:
             )
             self.topmost = True
         except pywintypes.error:
-            return False, "Windows 拒绝激活 Edge，置顶也失败"
+            return False, "Windows 拒绝激活 Chrome，置顶也失败"
         if activate(self.hwnd, timeout=focus_timeout):
-            return True, "Edge 已置顶并取得焦点"
-        return False, "已尝试将 Edge 置顶，但 Windows 仍未交出键盘焦点"
+            return True, "Chrome 已置顶并取得焦点"
+        return False, "已尝试将 Chrome 置顶，但 Windows 仍未交出键盘焦点"
 
     def _owns_window(self, hwnd: int) -> bool:
-        if not win32gui.IsWindow(hwnd) or process_name(hwnd) != "msedge.exe":
+        if not win32gui.IsWindow(hwnd) or process_name(hwnd) != "chrome.exe":
             return False
         try:
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -275,7 +279,7 @@ class EdgeWindow:
         windows: list[int] = []
 
         def visit(hwnd: int, _extra: object) -> None:
-            if win32gui.IsWindowVisible(hwnd) and process_name(hwnd) == "msedge.exe":
+            if win32gui.IsWindowVisible(hwnd) and process_name(hwnd) == "chrome.exe":
                 windows.append(hwnd)
 
         try:
@@ -301,8 +305,8 @@ class EdgeWindow:
             self.last_focus_ms = round((time.monotonic() - started) * 1000)
         edge = find_edge_exe()
         if not edge:
-            return False, "未找到 Microsoft Edge"
-        before = set(visible_windows("msedge.exe"))
+            return False, "未找到 Google Chrome"
+        before = set(visible_windows("chrome.exe"))
         opened = False
         port_ready = bool(self.devtools._read_port())
         if not port_ready:
@@ -316,10 +320,10 @@ class EdgeWindow:
                     "--new-window", "--start-maximized", url,
                 ])
             except OSError as exc:
-                return False, f"Edge 启动失败：{exc}"
+                return False, f"Chrome 启动失败：{exc}"
             self.pid = process.pid
             opened = True
-            # Show Edge as soon as its native window exists. Page setup can
+            # Show Chrome as soon as its native window exists. Page setup can
             # continue afterward without delaying the visible switch.
             window_deadline = time.monotonic() + 8
             while time.monotonic() < window_deadline:
@@ -330,7 +334,7 @@ class EdgeWindow:
                     break
                 time.sleep(0.05)
             if not self.devtools.wait_for_port():
-                return False, "Edge 已打开，但页面控制连接失败；请检查 Edge 调试策略"
+                return False, "Chrome 已打开，但页面控制连接失败；请检查 Chrome 调试策略"
         elif not self.hwnd or not win32gui.IsWindow(self.hwnd):
             self.hwnd = self._find_own_window(before)
             if self.hwnd:
@@ -344,7 +348,7 @@ class EdgeWindow:
                     "--new-window", "--start-maximized", url,
                 ])
             except OSError as exc:
-                return False, f"Edge 窗口打开失败：{exc}"
+                return False, f"Chrome 窗口打开失败：{exc}"
             opened = True
             if self.pid is None:
                 self.pid = process.pid
@@ -369,7 +373,7 @@ class EdgeWindow:
                     focused, message = self._focus(opened)
                     self.last_focus_ms = round((time.monotonic() - started) * 1000)
                 elif win32gui.GetForegroundWindow() == self.hwnd:
-                    focused, message = True, "已切到 Edge 专用窗口"
+                    focused, message = True, "已切到 Chrome 专用窗口"
                 elif not warm_focus[0]:
                     focused, message = self._focus(opened=False, fast=True)
                     self.last_focus_ms = round((time.monotonic() - started) * 1000)
@@ -384,4 +388,4 @@ class EdgeWindow:
                         return focused and resumed, f"{message}；{resume_message}"
                 return focused, message
             time.sleep(0.1)
-        return False, "Edge 页面已打开，但未找到专用窗口"
+        return False, "Chrome 页面已打开，但未找到专用窗口"

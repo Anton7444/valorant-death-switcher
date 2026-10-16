@@ -1,4 +1,4 @@
-"""Control only the app's dedicated Edge profile through local DevTools."""
+"""Control only the app's dedicated Chrome profile through local DevTools."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ class EdgeDevTools:
             self.port = port
             version = self._request("/json/version")
             if urlparse(version.get("webSocketDebuggerUrl", "")).path != lines[1].strip():
-                raise DevToolsError("Edge 调试端口与专用资料目录不匹配")
+                raise DevToolsError("Chrome 调试端口与专用资料目录不匹配")
             return port
         except (OSError, ValueError, IndexError, AttributeError, DevToolsError):
             self.port = None
@@ -48,7 +48,7 @@ class EdgeDevTools:
 
     def _request(self, path: str, *, method: str = "GET"):
         if self.port is None:
-            raise DevToolsError("Edge 调试端口不可用")
+            raise DevToolsError("Chrome 调试端口不可用")
         try:
             request = Request(f"http://127.0.0.1:{self.port}{path}", method=method)
             with self._opener.open(request, timeout=2) as response:
@@ -58,7 +58,7 @@ class EdgeDevTools:
                 except ValueError:
                     return body
         except (OSError, ValueError) as exc:
-            raise DevToolsError(f"Edge 页面连接失败：{exc}") from exc
+            raise DevToolsError(f"Chrome 页面连接失败：{exc}") from exc
 
     def pages(self) -> list[dict]:
         return [item for item in self._request("/json/list") if item.get("type") == "page"]
@@ -88,7 +88,7 @@ class EdgeDevTools:
     def _command(page: dict, method: str, params: dict | None = None) -> dict:
         address = page.get("webSocketDebuggerUrl")
         if not address:
-            raise DevToolsError("Edge 页面没有调试连接")
+            raise DevToolsError("Chrome 页面没有调试连接")
         try:
             connection = websocket.create_connection(address, timeout=2, suppress_origin=True)
             try:
@@ -102,7 +102,7 @@ class EdgeDevTools:
             finally:
                 connection.close()
         except (OSError, ValueError, websocket.WebSocketException) as exc:
-            raise DevToolsError(f"Edge 页面命令失败：{exc}") from exc
+            raise DevToolsError(f"Chrome 页面命令失败：{exc}") from exc
 
     def pause_video(self, url: str) -> tuple[bool, str]:
         page = self.find_page(url)

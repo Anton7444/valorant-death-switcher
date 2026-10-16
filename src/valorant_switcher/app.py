@@ -105,7 +105,7 @@ class Worker:
                     pause_ok, pause_message = self.edge.pause_video()
                     self._event(pause_message, not pause_ok)
                 if not target:
-                    self._event("购买阶段已开始，但未找到可恢复的游戏窗口；Edge 保持显示", True)
+                    self._event("购买阶段已开始，但未找到可恢复的游戏窗口；Chrome 保持显示", True)
                     continue
                 if self.edge.hwnd:
                     self.edge.minimize_for_game()
@@ -184,7 +184,7 @@ class Worker:
                     self.log = None
             if self.log and self.log.mode == "round_based" and self.coordinator.phase == "shopping" and not self.edge.prewarm_attempted:
                 if self.edge.prewarm():
-                    self._event("Edge 已在后台预热")
+                    self._event("Chrome 已在后台预热")
             game = find_game()
             game_status = "未找到游戏窗口"
             if game:
@@ -219,7 +219,7 @@ class Worker:
                         EVENT_LOGGER.info("识别状态=%s；原因=%s；模板分数=%s", result.label, result.reason, result.scores)
                     actions = self.coordinator.on_frame(result.label, game_foreground=True)
                     if self.coordinator.observation == "dead" and self.coordinator.death_sent and self.coordinator.dead_streak == self.coordinator.min_dead_frames:
-                        self._event("画面确认本人死亡" + ("；正在切到 Edge" if self.actions_enabled else "；只记录"))
+                        self._event("画面确认本人死亡" + ("；正在切到 Chrome" if self.actions_enabled else "；只记录"))
                     self._handle_actions(actions, game.hwnd)
                 else:
                     self.capture_issue_since = self.capture_issue_since or time.monotonic()
