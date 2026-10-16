@@ -26,13 +26,17 @@ class LogEvent:
     line: str
     round_index: int | None = None
     mode: MatchMode | None = None
+    combat_after: float = 10.0
 
 
-def parse_line(line: str) -> LogEvent | None:
+def parse_line(line: str, combat_after: float = 10.0) -> LogEvent | None:
     if "LogMapLoadModel: Update:" in line:
         mode_match = _GAME_MODE.search(line)
         if mode_match:
             name = mode_match.group(1).lower()
+            # Skirmish (2v2) has a ~4s buy phase, so its combat marker is at server time ~4.3.
+            if name.startswith("skirmish/skirmishgamemode."):
+                return LogEvent("mode", line, mode="round_based", combat_after=3.0)
             supported = (name.startswith("bomb/bombgamemode.") or "swiftplay_eorcredits_gamemode." in name)
             return LogEvent("mode", line, mode="round_based" if supported else "unsupported")
     match = _GAMEPLAY.search(line)
@@ -40,7 +44,7 @@ def parse_line(line: str) -> LogEvent | None:
         local_time, server_time = map(float, match.groups())
         if server_time == 0 and local_time < 2:
             return LogEvent("shopping", line)
-        if server_time >= 10 and local_time >= 10:
+        if server_time >= combat_after and local_time >= combat_after:
             return LogEvent("combat", line)
     match = _ROUND_END.search(line)
     if match:
@@ -90,6 +94,7 @@ class LogTailer:
         self._pending = b""
         self.phase: Phase = "unknown"
         self.mode: MatchMode = "unknown"
+        self._combat_after = 10.0
 
     def _open(self) -> None:
         if self._handle:
@@ -103,10 +108,11 @@ class LogTailer:
         """Restore state without emitting historical actions."""
         self._open()
         for raw in self._handle:
-            event = parse_line(raw.decode("utf-8", errors="replace"))
+            event = parse_line(raw.decode("utf-8", errors="replace"), self._combat_after)
             if event:
                 if event.kind == "mode":
                     self.mode = event.mode or "unknown"
+                    self._combat_after = event.combat_after
                 else:
                     self.phase = event.kind
         self._pending = b""
@@ -127,15 +133,17 @@ class LogTailer:
             self._open()
             self.phase = "unknown"
             self.mode = "unknown"
+            self._combat_after = 10.0
         data = self._pending + self._handle.read()
         parts = data.split(b"\n")
         self._pending = parts.pop()
         events = []
         for raw in parts:
-            event = parse_line(raw.decode("utf-8", errors="replace"))
+            event = parse_line(raw.decode("utf-8", errors="replace"), self._combat_after)
             if event:
                 if event.kind == "mode":
                     self.mode = event.mode or "unknown"
+                    self._combat_after = event.combat_after
                 else:
                     self.phase = event.kind
                 events.append(event)

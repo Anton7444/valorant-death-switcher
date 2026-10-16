@@ -45,10 +45,25 @@ def test_ambiguous_gameplay_lines_not_shopping():
     assert parse_line("Gameplay started at local time 5 (server time 0.000000)") is None
 
 
+def test_skirmish_2v2_short_buy_phase(tmp_path: Path):
+    mode = "LogMapLoadModel: Update: [URL: x?game=/Game/GameModes/Skirmish/SkirmishGameMode.SkirmishGameMode_C#8311]"
+    assert parse_line(mode).mode == "round_based"
+    assert parse_line("Gameplay started at local time 4.179688 (server time 4.292188)") is None
+    path = tmp_path / "ShooterGame.log"
+    path.write_text(mode + "\nGameplay started at local time 0.000000 (server time 0.000000)\n", encoding="utf-8")
+    tailer = LogTailer(path)
+    assert tailer.baseline() == "shopping"
+    assert tailer.mode == "round_based"
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write("Gameplay started at local time 4.179688 (server time 4.292188)\n")
+        stream.write("AShooterGameState::OnRoundEnded for round '1'\n")
+    assert [event.kind for event in tailer.poll()] == ["combat", "ended"]
+
+
 def test_mode_gate_distinguishes_round_match_from_short_skirmish(tmp_path: Path):
     supported = "LogMapLoadModel: Update: [URL: x?game=/Game/GameModes/Bomb/BombGameMode.BombGameMode_C#123]"
     swiftplay = "LogMapLoadModel: Update: [URL: x?game=/Game/GameModes/_Development/Swiftplay_EndOfRoundCredits/Swiftplay_EoRCredits_GameMode.Swiftplay_EoRCredits_GameMode_C#123]"
-    unsupported = "LogMapLoadModel: Update: [URL: x?game=/Game/GameModes/Skirmish/SkirmishGameMode.SkirmishGameMode_C#123]"
+    unsupported = "LogMapLoadModel: Update: [URL: x?game=/Game/GameModes/Deathmatch/DeathmatchGameMode.DeathmatchGameMode_C#123]"
     assert parse_line(supported).mode == "round_based"
     assert parse_line(swiftplay).mode == "round_based"
     assert parse_line(unsupported).mode == "unsupported"
