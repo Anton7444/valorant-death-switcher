@@ -1,4 +1,4 @@
-"""Extract UI-only templates from the user's 2560x1440 labeled screenshots.
+"""Extract UI-only templates from the user's 1920x1080 labeled screenshots (zh-TW international client).
 
 The source screenshots stay in local-data and are never included in the app.
 """
@@ -16,15 +16,17 @@ ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = ROOT / "local-data" / "samples"
 OUTPUT = ROOT / "src" / "valorant_switcher" / "templates"
 
+REF_W, REF_H = 1920, 1080
+
 SPECS = {
-    # Static white HUD bracket; excludes numeric HP and armor icon.
-    "alive": ("alive.png", (870, 1320, 1010, 1415), (0.21, 0.85, 0.47, 1.0), 0.82),
-    # Fixed combat-report title; excludes player names, portraits and damage.
-    "dead": ("dead.png", (2195, 748, 2375, 795), (0.73, 0.42, 1.0, 0.71), 0.83),
-    # Fixed spectator prompt text; excludes the spectated player's name.
-    "spectating": ("spectating.png", (218, 1138, 435, 1170), (0.0, 0.71, 0.31, 0.91), 0.83),
-    # Scoreboard header only; excludes all player rows and names.
-    "scoreboard": ("scoreboard.png", (1255, 615, 1530, 655), (0.29, 0.36, 0.73, 0.54), 0.83),
+    # Static white HUD bracket right of the HP number; excludes the number and armor icon.
+    "alive": ("alive.png", (645, 1000, 745, 1058), (0.28, 0.9, 0.45, 1.0), 0.65),
+    # "你遭到擊殺" under the combat report; excludes killer name, portrait and damage numbers.
+    "dead": ("dead.png", (1830, 624, 1897, 644), (0.9, 0.52, 1.0, 0.68), 0.80),
+    # "< mouse > 切換玩家" prompt shown while spectating; excludes the spectated player's name.
+    "spectating": ("spectating.png", (118, 852, 218, 876), (0.0, 0.72, 0.2, 0.85), 0.80),
+    # Scoreboard header strip only; excludes all player rows and names.
+    "scoreboard": ("scoreboard.png", (640, 447, 1345, 463), (0.25, 0.38, 0.75, 0.47), 0.80),
 }
 
 
@@ -34,8 +36,8 @@ def main() -> None:
     for name, (source, box, region, threshold) in SPECS.items():
         path = SAMPLES / source
         frame = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
-        if frame is None or frame.shape[:2] != (1440, 2560):
-            raise ValueError(f"截图缺失或不是 2560×1440：{path}")
+        if frame is None or frame.shape[:2] != (REF_H, REF_W):
+            raise ValueError(f"截图缺失或不是 1920×1080：{path}")
         x1, y1, x2, y2 = box
         patch = cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
         result, encoded = cv2.imencode(".png", patch)
@@ -48,8 +50,8 @@ def main() -> None:
             "file": file_name,
             "region": region,
             "threshold": threshold,
-            "reference_width": 2560,
-            "reference_height": 1440,
+            "reference_width": REF_W,
+            "reference_height": REF_H,
         })
     (OUTPUT / "templates.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"

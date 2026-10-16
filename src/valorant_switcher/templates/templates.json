@@ -5,53 +5,53 @@
       "name": "alive",
       "file": "alive.png",
       "region": [
-        0.21,
-        0.85,
-        0.47,
+        0.28,
+        0.9,
+        0.45,
         1.0
       ],
-      "threshold": 0.82,
-      "reference_width": 2560,
-      "reference_height": 1440
+      "threshold": 0.65,
+      "reference_width": 1920,
+      "reference_height": 1080
     },
     {
       "name": "dead",
       "file": "dead.png",
       "region": [
-        0.73,
-        0.42,
+        0.9,
+        0.52,
         1.0,
-        0.71
+        0.68
       ],
-      "threshold": 0.83,
-      "reference_width": 2560,
-      "reference_height": 1440
+      "threshold": 0.8,
+      "reference_width": 1920,
+      "reference_height": 1080
     },
     {
       "name": "spectating",
       "file": "spectating.png",
       "region": [
         0.0,
-        0.71,
-        0.31,
-        0.91
+        0.72,
+        0.2,
+        0.85
       ],
-      "threshold": 0.83,
-      "reference_width": 2560,
-      "reference_height": 1440
+      "threshold": 0.8,
+      "reference_width": 1920,
+      "reference_height": 1080
     },
     {
       "name": "scoreboard",
       "file": "scoreboard.png",
       "region": [
-        0.29,
-        0.36,
-        0.73,
-        0.54
+        0.25,
+        0.38,
+        0.75,
+        0.47
       ],
-      "threshold": 0.83,
-      "reference_width": 2560,
-      "reference_height": 1440
+      "threshold": 0.8,
+      "reference_width": 1920,
+      "reference_height": 1080
     }
   ]
 }
