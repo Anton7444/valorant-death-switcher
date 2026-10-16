@@ -107,7 +107,7 @@ class EdgeDevTools:
     def pause_video(self, url: str) -> tuple[bool, str]:
         page = self.find_page(url)
         if page is None:
-            return False, "抖音标签已关闭，无法暂停视频"
+            return False, "Threads标签已关闭，无法暂停视频"
         expression = """(() => {
           const videos = new Set();
           function scan(root) {
@@ -133,17 +133,17 @@ class EdgeDevTools:
         })()"""
         result = self._command(page, "Runtime.evaluate", {"expression": expression, "returnByValue": True})
         if "exceptionDetails" in result:
-            return False, "抖音页面拒绝暂停命令"
+            return False, "Threads页面拒绝暂停命令"
         value = result.get("result", {}).get("value", {})
         found = value.get("found", 0)
         paused = value.get("paused", 0)
         if value.get("resumeQueued"):
             self.paused_page_id = page["id"]
         if found and paused == found:
-            return True, f"已暂停抖音页面中的 {found} 个视频"
+            return True, f"已暂停Threads页面中的 {found} 个视频"
         if not found:
-            return False, "抖音页面当前没有可暂停的视频"
-        return False, f"抖音页面有 {found} 个视频，仅 {paused} 个已暂停"
+            return False, "Threads页面当前没有可暂停的视频"
+        return False, f"Threads页面有 {found} 个视频，仅 {paused} 个已暂停"
 
     def resume_video(self, url: str) -> tuple[bool, str]:
         if self.paused_page_id is None:

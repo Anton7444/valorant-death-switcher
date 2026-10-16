@@ -208,7 +208,7 @@ class EdgeWindow:
 
     def pause_video(self) -> tuple[bool, str]:
         if not self.url:
-            return False, "未打开过抖音页面，无法暂停视频"
+            return False, "未打开过Threads页面，无法暂停视频"
         try:
             if not self.devtools._read_port():
                 return False, "Edge 页面连接已断开，无法暂停视频"

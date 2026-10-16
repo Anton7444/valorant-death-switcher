@@ -60,13 +60,13 @@ def test_first_edge_launch_uses_controllable_maximized_window(monkeypatch, tmp_p
     monkeypatch.setattr(edge.devtools, "_command", lambda *_args: {})
     monkeypatch.setattr(edge.devtools, "resume_video", lambda _url: (True, ""))
     monkeypatch.setattr(edge, "_find_own_window", lambda _before: 456)
-    ok, _message = edge.open_or_activate("https://www.douyin.com/")
+    ok, _message = edge.open_or_activate("https://www.threads.com/")
     assert ok
     assert edge.hwnd == 456
     assert launched[0][0] == r"C:\Edge\msedge.exe"
     assert f"--user-data-dir={tmp_path}" in launched[0]
     assert "--remote-debugging-port=0" in launched[0]
-    assert launched[0][-1] == "https://www.douyin.com/"
+    assert launched[0][-1] == "https://www.threads.com/"
     assert maximized == [(456, windows.win32con.SW_MAXIMIZE)]
 
 
@@ -84,7 +84,7 @@ def test_existing_edge_focus_precedes_page_control(monkeypatch):
     monkeypatch.setattr(edge.devtools, "ensure_page", lambda _url: order.append("page") or {"id": "page"})
     monkeypatch.setattr(edge.devtools, "_command", lambda *_args: {})
     monkeypatch.setattr(edge.devtools, "resume_video", lambda _url: (True, ""))
-    assert edge.open_or_activate("https://www.douyin.com/")[0]
+    assert edge.open_or_activate("https://www.threads.com/")[0]
     assert order[:3] == ["focus", "port", "page"]
 
 
@@ -111,11 +111,11 @@ def test_activation_retries_with_attached_input_and_always_detaches(monkeypatch)
 
 def test_pause_confirms_page_video_paused(monkeypatch):
     edge = windows.EdgeWindow()
-    edge.url = "https://www.douyin.com/"
+    edge.url = "https://www.threads.com/"
     edge.hwnd = 456
     monkeypatch.setattr(edge.devtools, "_read_port", lambda: 12345)
-    monkeypatch.setattr(edge.devtools, "pause_video", lambda _url: (True, "已暂停抖音页面中的 1 个视频"))
-    assert edge.pause_video() == (True, "已暂停抖音页面中的 1 个视频")
+    monkeypatch.setattr(edge.devtools, "pause_video", lambda _url: (True, "已暂停Threads页面中的 1 个视频"))
+    assert edge.pause_video() == (True, "已暂停Threads页面中的 1 个视频")
 
 
 def test_failed_focus_places_edge_on_top_and_later_clears_it(monkeypatch):

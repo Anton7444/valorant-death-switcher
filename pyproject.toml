@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "valorant-death-switcher"
 version = "0.1.0"
-description = "Conservative on-screen death detection and round-log window switching for VALORANT CN"
+description = "Conservative on-screen death detection and round-log window switching for VALORANT"
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "dxcam[winrt]>=0.3,<1",

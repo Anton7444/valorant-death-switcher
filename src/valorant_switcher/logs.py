@@ -69,14 +69,13 @@ def discover_log(configured: str = "") -> Path | None:
                             return candidate
         except (psutil.Error, OSError):
             continue
-    suffix = Path("Tencent Games/VALORANT/live/ShooterGame/Saved/Logs/ShooterGame.log")
     candidates: list[Path] = []
-    for letter in "CDEFGHIJKLMNOPQRSTUVWXYZ":
-        root = Path(f"{letter}:/")
-        candidates.extend((root / suffix, root / "无畏契约" / suffix))
     local = os.environ.get("LOCALAPPDATA")
     if local:
         candidates.append(Path(local) / "VALORANT/Saved/Logs/ShooterGame.log")
+    suffix = Path("Riot Games/VALORANT/live/ShooterGame/Saved/Logs/ShooterGame.log")
+    for letter in "CDEFGHIJKLMNOPQRSTUVWXYZ":
+        candidates.append(Path(f"{letter}:/") / suffix)
     present = [p for p in candidates if p.is_file()]
     return max(present, key=lambda p: p.stat().st_mtime) if present else None
 

@@ -90,7 +90,7 @@ class Worker:
         for action in actions:
             if action == "open_edge":
                 started = time.monotonic()
-                ok, message = self.edge.open_or_activate(self.settings.douyin_url)
+                ok, message = self.edge.open_or_activate(self.settings.threads_url)
                 elapsed_ms = round((time.monotonic() - started) * 1000)
                 focus_ms = self.edge.last_focus_ms
                 timing = f"窗口 {focus_ms} ms，总处理 {elapsed_ms} ms" if focus_ms is not None else f"总处理 {elapsed_ms} ms"
@@ -300,14 +300,14 @@ class MainWindow(QMainWindow):
         form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         form.setHorizontalSpacing(14)
         form.setVerticalSpacing(12)
-        self.url = QLineEdit(self.settings.douyin_url)
+        self.url = QLineEdit(self.settings.threads_url)
         self.url.textChanged.connect(self._clear_url_error)
-        url_label = QLabel("抖音网址")
+        url_label = QLabel("Threads 网址")
         url_label.setObjectName("fieldName")
         form.addRow(url_label, self.url)
         log_row = QHBoxLayout()
         self.log_path = QLineEdit(self.settings.log_path)
-        self.log_path.setPlaceholderText("自动查找国服 ShooterGame.log")
+        self.log_path.setPlaceholderText("自动查找国际服 ShooterGame.log")
         browse = QPushButton("选择文件")
         browse.clicked.connect(self.browse_log)
         log_row.addWidget(self.log_path)
@@ -393,7 +393,7 @@ class MainWindow(QMainWindow):
             self.add_event("网址无效：请填写完整的 HTTP 或 HTTPS 网址", True)
             self.url.setFocus()
             return False
-        self.settings.douyin_url = url
+        self.settings.threads_url = url
         self.settings.log_path = self.log_path.text().strip()
         self.settings.actions_enabled = self.action_checkbox.isChecked()
         self.settings.save()

@@ -13,7 +13,7 @@ def settings_path() -> Path:
 
 @dataclass
 class Settings:
-    douyin_url: str = "https://www.douyin.com/"
+    threads_url: str = "https://www.threads.com/"
     log_path: str = ""
     actions_enabled: bool = False
 
