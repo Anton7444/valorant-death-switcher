@@ -212,10 +212,10 @@ class EdgeWindow:
 
     def pause_video(self) -> tuple[bool, str]:
         if not self.url:
-            return False, "未打开过Threads页面，无法暂停视频"
+            return False, "未開啟過Threads頁面，無法暫停影片"
         try:
             if not self.devtools._read_port():
-                return False, "Chrome 页面连接已断开，无法暂停视频"
+                return False, "Chrome 頁面連線已斷開，無法暫停影片"
             return self.devtools.pause_video(self.url)
         except DevToolsError as exc:
             return False, str(exc)
@@ -242,14 +242,14 @@ class EdgeWindow:
     def restore_after_failed_game_switch(self) -> tuple[bool, str]:
         if self.hwnd and win32gui.IsWindow(self.hwnd):
             return self._focus(opened=False)
-        return False, "Chrome 窗口已关闭，无法恢复"
+        return False, "Chrome 視窗已關閉，無法恢復"
 
     def _focus(self, opened: bool, *, fast: bool = False) -> tuple[bool, str]:
         assert self.hwnd is not None
         self._maximize(self.hwnd)
         focus_timeout = 0.08 if fast else 1.0
         if activate(self.hwnd, timeout=focus_timeout):
-            return True, "已打开并切到 Chrome" if opened else "已切到 Chrome 专用窗口"
+            return True, "已開啟並切到 Chrome" if opened else "已切到 Chrome 專用視窗"
         try:
             win32gui.SetWindowPos(
                 self.hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
@@ -257,10 +257,10 @@ class EdgeWindow:
             )
             self.topmost = True
         except pywintypes.error:
-            return False, "Windows 拒绝激活 Chrome，置顶也失败"
+            return False, "Windows 拒絕啟用 Chrome，置頂也失敗"
         if activate(self.hwnd, timeout=focus_timeout):
-            return True, "Chrome 已置顶并取得焦点"
-        return False, "已尝试将 Chrome 置顶，但 Windows 仍未交出键盘焦点"
+            return True, "Chrome 已置頂並取得焦點"
+        return False, "已嘗試將 Chrome 置頂，但 Windows 仍未交出鍵盤焦點"
 
     def _owns_window(self, hwnd: int) -> bool:
         if not win32gui.IsWindow(hwnd) or process_name(hwnd) != "chrome.exe":
@@ -296,7 +296,7 @@ class EdgeWindow:
         self.last_focus_ms = None
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            return False, "网址必须是有效的 HTTP 或 HTTPS 地址"
+            return False, "網址必須是有效的 HTTP 或 HTTPS 地址"
         self.url = url
         warm_focus: tuple[bool, str] | None = None
         if self.hwnd and self._owns_window(self.hwnd):
@@ -320,7 +320,7 @@ class EdgeWindow:
                     "--new-window", "--start-maximized", url,
                 ])
             except OSError as exc:
-                return False, f"Chrome 启动失败：{exc}"
+                return False, f"Chrome 啟動失敗：{exc}"
             self.pid = process.pid
             opened = True
             # Show Chrome as soon as its native window exists. Page setup can
@@ -334,7 +334,7 @@ class EdgeWindow:
                     break
                 time.sleep(0.05)
             if not self.devtools.wait_for_port():
-                return False, "Chrome 已打开，但页面控制连接失败；请检查 Chrome 调试策略"
+                return False, "Chrome 已開啟，但頁面控制連線失敗；請檢查 Chrome 除錯策略"
         elif not self.hwnd or not win32gui.IsWindow(self.hwnd):
             self.hwnd = self._find_own_window(before)
             if self.hwnd:
@@ -348,7 +348,7 @@ class EdgeWindow:
                     "--new-window", "--start-maximized", url,
                 ])
             except OSError as exc:
-                return False, f"Chrome 窗口打开失败：{exc}"
+                return False, f"Chrome 視窗開啟失敗：{exc}"
             opened = True
             if self.pid is None:
                 self.pid = process.pid
@@ -373,7 +373,7 @@ class EdgeWindow:
                     focused, message = self._focus(opened)
                     self.last_focus_ms = round((time.monotonic() - started) * 1000)
                 elif win32gui.GetForegroundWindow() == self.hwnd:
-                    focused, message = True, "已切到 Chrome 专用窗口"
+                    focused, message = True, "已切到 Chrome 專用視窗"
                 elif not warm_focus[0]:
                     focused, message = self._focus(opened=False, fast=True)
                     self.last_focus_ms = round((time.monotonic() - started) * 1000)
@@ -383,9 +383,9 @@ class EdgeWindow:
                     try:
                         resumed, resume_message = self.devtools.resume_video(url)
                     except DevToolsError as exc:
-                        return False, f"{message}；视频恢复失败：{exc}"
+                        return False, f"{message}；影片恢復失敗：{exc}"
                     if resume_message:
                         return focused and resumed, f"{message}；{resume_message}"
                 return focused, message
             time.sleep(0.1)
-        return False, "Chrome 页面已打开，但未找到专用窗口"
+        return False, "Chrome 頁面已開啟，但未找到專用視窗"

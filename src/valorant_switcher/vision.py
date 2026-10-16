@@ -54,7 +54,7 @@ class TemplateDetector:
     def __init__(self, directory: Path):
         self.directory = directory
         self.templates: dict[str, Template] = {}
-        self.error = "缺少已验证画面模板；请先提供存活、死亡、观战截图"
+        self.error = "缺少已驗證畫面模板；請先提供存活、死亡、觀戰截圖"
         self.reload()
 
     def reload(self) -> None:
@@ -67,25 +67,25 @@ class TemplateDetector:
             for item in config["templates"]:
                 name = item["name"]
                 if name not in {"alive", "dead", "spectating", "scoreboard"}:
-                    raise ValueError(f"未知模板名称：{name}")
+                    raise ValueError(f"未知模板名稱：{name}")
                 image_path = self.directory / item["file"]
                 image = cv2.imdecode(np.fromfile(str(image_path), dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
                 if image is None or min(image.shape) < 8:
-                    raise ValueError(f"模板无法读取：{image_path}")
+                    raise ValueError(f"模板無法讀取：{image_path}")
                 region = tuple(float(x) for x in item["region"])
                 if len(region) != 4 or any(not 0 <= x <= 1 for x in region):
-                    raise ValueError(f"搜索区域无效：{name}")
+                    raise ValueError(f"搜尋區域無效：{name}")
                 self.templates[name] = Template(
                     name, image, region, float(item.get("threshold", 0.83)),
                     int(item["reference_width"]),
                     int(item["reference_height"]) if item.get("reference_height") else None,
                 )
             if "alive" not in self.templates or not ({"dead", "spectating"} & self.templates.keys()):
-                raise ValueError("模板包必须包含存活和至少一种死亡正面特征")
+                raise ValueError("模板包必須包含存活和至少一種死亡正面特徵")
             self.error = ""
         except (OSError, ValueError, KeyError, TypeError) as exc:
             self.templates.clear()
-            self.error = f"画面模板错误：{exc}"
+            self.error = f"畫面模板錯誤：{exc}"
 
     @staticmethod
     def _score(gray: np.ndarray, spec: Template) -> float:
@@ -123,21 +123,21 @@ class TemplateDetector:
         if not self.templates:
             return VisionResult("unknown", self.error, {})
         if frame is None or frame.ndim != 3 or frame.size == 0:
-            return VisionResult("unknown", "画面无效", {})
+            return VisionResult("unknown", "畫面無效", {})
         left, top, right, bottom = content_bounds(frame)
         active = frame[top:bottom, left:right]
         gray = cv2.cvtColor(active, cv2.COLOR_BGR2GRAY)
         scores = {name: self._score(gray, spec) for name, spec in self.templates.items()}
         visible = {name for name, score in scores.items() if score >= self.templates[name].threshold}
         if "scoreboard" in visible:
-            return VisionResult("unknown", "计分板遮挡", scores)
+            return VisionResult("unknown", "計分板遮擋", scores)
         alive = "alive" in visible
         report = "dead" in visible
         spectating = "spectating" in visible
         if spectating:
-            return VisionResult("dead", "观战切换提示可见", scores)
+            return VisionResult("dead", "觀戰切換提示可見", scores)
         if alive and not report:
-            return VisionResult("alive", "本人血量 HUD 可见", scores)
+            return VisionResult("alive", "本人血量 HUD 可見", scores)
         if report and not alive:
-            return VisionResult("dead", "战斗记录可见，且本人血量 HUD 不可见", scores)
-        return VisionResult("unknown", "证据不足或相互冲突", scores)
+            return VisionResult("dead", "戰鬥記錄可見，且本人血量 HUD 不可見", scores)
+        return VisionResult("unknown", "證據不足或相互衝突", scores)

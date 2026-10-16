@@ -47,9 +47,9 @@ class Worker:
         self.edge = EdgeWindow()
         self.log: LogTailer | None = None
         self.last_status_at = 0.0
-        self.last_capture_status = "等待游戏"
-        self.last_active_capture_status = "尚未捕获"
-        self.last_reason = self.detector.error or "等待画面"
+        self.last_capture_status = "等待遊戲"
+        self.last_active_capture_status = "尚未捕獲"
+        self.last_reason = self.detector.error or "等待畫面"
         self.last_game_geometry: tuple | None = None
         self.last_capture_geometry: tuple | None = None
         self.capture_issue_since: float | None = None
@@ -77,13 +77,13 @@ class Worker:
         self.signals.status.emit({
             "game": game,
             "log": log,
-            "phase": {"unknown": "未知", "shopping": "购买阶段", "combat": "战斗阶段", "ended": "回合结束"}[self.coordinator.phase],
+            "phase": {"unknown": "未知", "shopping": "購買階段", "combat": "戰鬥階段", "ended": "回合結束"}[self.coordinator.phase],
             "capture": self.last_capture_status,
             "vision": {"unknown": "未知", "alive": "存活", "suspected": "疑似死亡", "dead": "已死亡"}[self.coordinator.observation],
-            "template": self.detector.error or "已加载真实画面模板",
+            "template": self.detector.error or "已載入真實畫面模板",
             "reason": self.last_reason,
-            "mode": ("执行切屏" if self.actions_enabled else "只记录") +
-                    ("；标准回合已确认" if self.log and self.log.mode == "round_based" else "；未确认标准回合，动作禁用"),
+            "mode": ("執行切換視窗" if self.actions_enabled else "只記錄") +
+                    ("；標準回合已確認" if self.log and self.log.mode == "round_based" else "；未確認標準回合，動作禁用"),
         })
 
     def _handle_actions(self, actions: list[str], game_hwnd: int | None) -> None:
@@ -93,10 +93,10 @@ class Worker:
                 ok, message = self.edge.open_or_activate(self.settings.threads_url)
                 elapsed_ms = round((time.monotonic() - started) * 1000)
                 focus_ms = self.edge.last_focus_ms
-                timing = f"窗口 {focus_ms} ms，总处理 {elapsed_ms} ms" if focus_ms is not None else f"总处理 {elapsed_ms} ms"
+                timing = f"視窗 {focus_ms} ms，總處理 {elapsed_ms} ms" if focus_ms is not None else f"總處理 {elapsed_ms} ms"
                 if focus_ms is not None and self.first_dead_frame_at is not None:
                     evidence_ms = round((started - self.first_dead_frame_at) * 1000) + focus_ms
-                    timing += f"，首帧死亡证据到窗口 {evidence_ms} ms"
+                    timing += f"，首幀死亡證據到視窗 {evidence_ms} ms"
                 self._event(f"{message}；{timing}", not ok)
                 self.first_dead_frame_at = None
             elif action == "return_game":
@@ -105,19 +105,19 @@ class Worker:
                     pause_ok, pause_message = self.edge.pause_video()
                     self._event(pause_message, not pause_ok)
                 if not target:
-                    self._event("购买阶段已开始，但未找到可恢复的游戏窗口；Chrome 保持显示", True)
+                    self._event("購買階段已開始，但未找到可恢復的遊戲視窗；Chrome 保持顯示", True)
                     continue
                 if self.edge.hwnd:
                     self.edge.minimize_for_game()
                 if is_game_foreground(target):
-                    self._event("游戏已在前台")
+                    self._event("遊戲已在前景")
                 else:
                     ok = activate(target, timeout=3.0)
                     if ok:
-                        self._event("已切回游戏")
+                        self._event("已切回遊戲")
                     else:
                         restored, restore_message = self.edge.restore_after_failed_game_switch()
-                        self._event("购买阶段已开始，但 Windows 未能切回游戏；" + restore_message, True)
+                        self._event("購買階段已開始，但 Windows 未能切回遊戲；" + restore_message, True)
 
     def run(self) -> None:
         com_initialized = False
@@ -126,8 +126,8 @@ class Worker:
             com_initialized = True
             self._run()
         except Exception as exc:
-            EVENT_LOGGER.exception("观察线程出错")
-            self._event(f"程序错误：{exc}", True)
+            EVENT_LOGGER.exception("觀察執行緒出錯")
+            self._event(f"程式錯誤：{exc}", True)
         finally:
             self.capture.close()
             if self.log:
@@ -137,9 +137,9 @@ class Worker:
             self.signals.stopped.emit()
 
     def _run(self) -> None:
-        self._event("程序已启动；" + ("自动切屏已开启" if self.actions_enabled else "仅记录模式"))
+        self._event("程式已啟動；" + ("自動切換視窗已開啟" if self.actions_enabled else "僅記錄模式"))
         next_log_search = 0.0
-        log_status = "查找日志中"
+        log_status = "查詢日誌中"
         while not self.stop_event.is_set():
             started = time.monotonic()
             if self.log is None and started >= next_log_search:
@@ -152,48 +152,48 @@ class Worker:
                         if self.log.mode != "round_based":
                             self.coordinator.phase = "unknown"
                         log_status = str(path)
-                        self._event(f"已连接日志：{path}；恢复阶段：{self.coordinator.phase}；模式：{self.log.mode}")
+                        self._event(f"已連線日誌：{path}；恢復階段：{self.coordinator.phase}；模式：{self.log.mode}")
                     except OSError as exc:
                         self.log = None
-                        log_status = f"日志读取失败：{exc}"
+                        log_status = f"日誌讀取失敗：{exc}"
                 else:
-                    log_status = "未找到 ShooterGame.log；请在设置中选择"
+                    log_status = "未找到 ShooterGame.log；請在設定中選擇"
             if self.log:
                 try:
                     if not self.log.path.is_file():
                         self.log.close()
                         self.log = None
                         self.coordinator.phase = "unknown"
-                        log_status = "日志暂时不可用"
+                        log_status = "日誌暫時不可用"
                     else:
                         for event in self.log.poll():
                             if event.kind == "mode":
                                 self.coordinator = Coordinator(actions_enabled=self.actions_enabled)
-                                self._event("检测到标准回合模式" if event.mode == "round_based" else "当前模式无购买阶段保障；已禁用切屏")
+                                self._event("檢測到標準回合模式" if event.mode == "round_based" else "目前模式無購買階段保障；已禁用切換視窗")
                                 continue
                             if self.log.mode == "round_based":
                                 actions = self.coordinator.on_phase(event.kind)
-                                self._event({"shopping": "购买阶段开始", "combat": "战斗阶段开始", "ended": "回合结束"}[event.kind])
+                                self._event({"shopping": "購買階段開始", "combat": "戰鬥階段開始", "ended": "回合結束"}[event.kind])
                                 self._handle_actions(actions, None)
                             else:
                                 self.coordinator.phase = "unknown"
                 except OSError as exc:
-                    log_status = f"日志读取失败：{exc}"
+                    log_status = f"日誌讀取失敗：{exc}"
                     self.coordinator.phase = "unknown"
                     self.log.close()
                     self.log = None
             if self.log and self.log.mode == "round_based" and self.coordinator.phase == "shopping" and not self.edge.prewarm_attempted:
                 if self.edge.prewarm():
-                    self._event("Chrome 已在后台预热")
+                    self._event("Chrome 已在背景預熱")
             game = find_game()
-            game_status = "未找到游戏窗口"
+            game_status = "未找到遊戲視窗"
             if game:
                 self.last_game_hwnd = game.hwnd
                 game_status = f"已找到：{game.monitor_name} {game.rect[2]-game.rect[0]}×{game.rect[3]-game.rect[1]}"
                 geometry = (game.monitor_name, game.monitor_rect, game.rect)
                 if geometry != self.last_game_geometry:
                     self.last_game_geometry = geometry
-                    self._event(f"游戏窗口区域：{game_status}；显示器范围 {game.monitor_rect}")
+                    self._event(f"遊戲視窗區域：{game_status}；顯示器範圍 {game.monitor_rect}")
             if game and self.log and self.log.mode == "round_based" and self.coordinator.phase == "combat" and is_game_foreground(game.hwnd):
                 captured = self.capture.grab(game)
                 self.last_capture_status = f"{captured.backend}：{captured.status}"
@@ -201,12 +201,12 @@ class Worker:
                 if captured.frame is not None:
                     self.capture_issue_since = None
                     if self.capture_issue_reported:
-                        self._event("游戏画面捕获已恢复")
+                        self._event("遊戲畫面捕獲已恢復")
                         self.capture_issue_reported = False
                     frame_geometry = (captured.backend, captured.frame.shape[1], captured.frame.shape[0])
                     if frame_geometry != self.last_capture_geometry:
                         self.last_capture_geometry = frame_geometry
-                        self._event(f"捕获画面尺寸：{frame_geometry[1]}×{frame_geometry[2]}；后端 {frame_geometry[0]}")
+                        self._event(f"捕獲畫面尺寸：{frame_geometry[1]}×{frame_geometry[2]}；後端 {frame_geometry[0]}")
                     result = self.detector.classify(captured.frame)
                     if result.label == "dead":
                         self.first_dead_frame_at = self.first_dead_frame_at or time.monotonic()
@@ -216,15 +216,15 @@ class Worker:
                     self.last_reason = f"{result.reason}；{score_text}"
                     if result.label != self.last_vision_label:
                         self.last_vision_label = result.label
-                        EVENT_LOGGER.info("识别状态=%s；原因=%s；模板分数=%s", result.label, result.reason, result.scores)
+                        EVENT_LOGGER.info("辨識狀態=%s；原因=%s；模板分數=%s", result.label, result.reason, result.scores)
                     actions = self.coordinator.on_frame(result.label, game_foreground=True)
                     if self.coordinator.observation == "dead" and self.coordinator.death_sent and self.coordinator.dead_streak == self.coordinator.min_dead_frames:
-                        self._event("画面确认本人死亡" + ("；正在切到 Chrome" if self.actions_enabled else "；只记录"))
+                        self._event("畫面確認本人死亡" + ("；正在切到 Chrome" if self.actions_enabled else "；只記錄"))
                     self._handle_actions(actions, game.hwnd)
                 else:
                     self.capture_issue_since = self.capture_issue_since or time.monotonic()
                     if not self.capture_issue_reported and time.monotonic() - self.capture_issue_since >= 2:
-                        self._event(f"游戏画面捕获暂停：{self.last_capture_status}")
+                        self._event(f"遊戲畫面捕獲暫停：{self.last_capture_status}")
                         self.capture_issue_reported = True
                     self.coordinator.on_frame("unknown", game_foreground=False)
                     self.first_dead_frame_at = None
@@ -235,7 +235,7 @@ class Worker:
                 self.capture.close()
                 self.capture_issue_since = None
                 self.capture_issue_reported = False
-                self.last_capture_status = f"等待游戏处于前台战斗阶段；上次：{self.last_active_capture_status}"
+                self.last_capture_status = f"等待遊戲處於前景戰鬥階段；上次：{self.last_active_capture_status}"
             self._status(game_status, log_status)
             self.stop_event.wait(max(0.0, 0.125 - (time.monotonic() - started)))
 
@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
         self.settings = Settings.load()
         self.signals = Signals()
         self.worker: Worker | None = None
-        self.setWindowTitle("无畏契约死亡自动摸鱼")
+        self.setWindowTitle("特戰英豪死亡自動摸魚")
         self.resize(780, 720)
         self.setMinimumSize(670, 590)
         self.setStyleSheet("""
@@ -284,15 +284,15 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(root)
         layout.setContentsMargins(22, 20, 22, 20)
         layout.setSpacing(11)
-        title = QLabel("无畏契约死亡自动摸鱼")
+        title = QLabel("特戰英豪死亡自動摸魚")
         title.setObjectName("title")
         layout.addWidget(title)
 
-        self.overview = QLabel("●  待运行")
+        self.overview = QLabel("●  待執行")
         self.overview.setStyleSheet("color: #a9bad4; font-weight: 600;")
         layout.addWidget(self.overview)
 
-        section = QLabel("连接设置")
+        section = QLabel("連線設定")
         section.setObjectName("section")
         layout.addWidget(section)
 
@@ -302,38 +302,38 @@ class MainWindow(QMainWindow):
         form.setVerticalSpacing(12)
         self.url = QLineEdit(self.settings.threads_url)
         self.url.textChanged.connect(self._clear_url_error)
-        url_label = QLabel("Threads 网址")
+        url_label = QLabel("Threads 網址")
         url_label.setObjectName("fieldName")
         form.addRow(url_label, self.url)
         log_row = QHBoxLayout()
         self.log_path = QLineEdit(self.settings.log_path)
-        self.log_path.setPlaceholderText("自动查找国际服 ShooterGame.log")
-        browse = QPushButton("选择文件")
+        self.log_path.setPlaceholderText("自動查詢國際服 ShooterGame.log")
+        browse = QPushButton("選擇檔案")
         browse.clicked.connect(self.browse_log)
         log_row.addWidget(self.log_path)
         log_row.addWidget(browse)
-        log_label = QLabel("日志路径")
+        log_label = QLabel("日誌路徑")
         log_label.setObjectName("fieldName")
         form.addRow(log_label, log_row)
         layout.addLayout(form)
 
         controls = QHBoxLayout()
-        self.run_button = QPushButton("开始运行")
+        self.run_button = QPushButton("開始執行")
         self.run_button.setObjectName("runButton")
         self.run_button.clicked.connect(self.toggle)
-        self.action_checkbox = QCheckBox("自动切屏")
+        self.action_checkbox = QCheckBox("自動切換視窗")
         self.action_checkbox.setChecked(self.settings.actions_enabled)
         if TemplateDetector(Path(__file__).parent / "templates").error:
             self.action_checkbox.setChecked(False)
             self.action_checkbox.setEnabled(False)
-            self.action_checkbox.setToolTip("缺少真实画面模板，当前仅可使用只记录模式")
+            self.action_checkbox.setToolTip("缺少真實畫面模板，目前僅可使用只記錄模式")
         self.action_checkbox.toggled.connect(self.set_actions)
         controls.addWidget(self.run_button)
         controls.addWidget(self.action_checkbox)
         controls.addStretch(1)
         layout.addLayout(controls)
 
-        section = QLabel("实时状态")
+        section = QLabel("實時狀態")
         section.setObjectName("section")
         layout.addWidget(section)
 
@@ -344,27 +344,27 @@ class MainWindow(QMainWindow):
         status_grid.setColumnStretch(0, 1)
         status_grid.setColumnStretch(1, 1)
         for index, (key, title) in enumerate((
-            ("game", "游戏"), ("log", "日志"), ("phase", "回合"),
-            ("capture", "捕获"), ("vision", "识别"), ("template", "画面模板"),
-            ("reason", "判断原因"), ("mode", "模式"),
+            ("game", "遊戲"), ("log", "日誌"), ("phase", "回合"),
+            ("capture", "捕獲"), ("vision", "辨識"), ("template", "畫面模板"),
+            ("reason", "判斷原因"), ("mode", "模式"),
         )):
-            line = QLabel(f"{title}：等待启动")
+            line = QLabel(f"{title}：等待啟動")
             line.setObjectName("status")
             line.setWordWrap(True)
             line.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             self.status_labels[key] = line
             status_grid.addWidget(line, index // 2, index % 2)
         layout.addLayout(status_grid)
-        section = QLabel("事件记录")
+        section = QLabel("事件記錄")
         section.setObjectName("section")
         layout.addWidget(section)
-        self.notice = QLabel("暂无事件")
+        self.notice = QLabel("暫無事件")
         self.notice.setObjectName("notice")
         self.notice.setWordWrap(True)
         layout.addWidget(self.notice)
         self.events = QPlainTextEdit()
         self.events.setReadOnly(True)
-        self.events.setPlaceholderText("运行后将在此显示事件")
+        self.events.setPlaceholderText("執行後將在此顯示事件")
         layout.addWidget(self.events, 1)
         self.setCentralWidget(root)
 
@@ -373,7 +373,7 @@ class MainWindow(QMainWindow):
         self.signals.stopped.connect(self.stopped)
 
     def browse_log(self) -> None:
-        name, _ = QFileDialog.getOpenFileName(self, "选择 ShooterGame.log", str(Path.home()), "日志文件 (*.log)")
+        name, _ = QFileDialog.getOpenFileName(self, "選擇 ShooterGame.log", str(Path.home()), "日誌檔案 (*.log)")
         if name:
             self.log_path.setText(name)
 
@@ -390,7 +390,7 @@ class MainWindow(QMainWindow):
             self.url.setProperty("invalid", True)
             self.url.style().unpolish(self.url)
             self.url.style().polish(self.url)
-            self.add_event("网址无效：请填写完整的 HTTP 或 HTTPS 网址", True)
+            self.add_event("網址無效：請填寫完整的 HTTP 或 HTTPS 網址", True)
             self.url.setFocus()
             return False
         self.settings.threads_url = url
@@ -403,7 +403,7 @@ class MainWindow(QMainWindow):
         if self.worker:
             self.worker.actions_enabled = enabled
             self.worker.coordinator.actions_enabled = enabled
-            self.add_event("已启用切屏动作" if enabled else "已切到只记录模式", False)
+            self.add_event("已啟用切換視窗動作" if enabled else "已切到只記錄模式", False)
         self.settings.actions_enabled = enabled
         self.settings.save()
 
@@ -416,24 +416,24 @@ class MainWindow(QMainWindow):
             return
         self.worker = Worker(self.settings, self.signals)
         self.worker.start()
-        self.run_button.setText("停止运行")
-        self.overview.setText("●  正在观察")
+        self.run_button.setText("停止執行")
+        self.overview.setText("●  正在觀察")
         self.overview.setStyleSheet("color: #72dbb9; font-weight: 600;")
         self.url.setEnabled(False)
         self.log_path.setEnabled(False)
 
     def stopped(self) -> None:
         self.worker = None
-        self.run_button.setText("开始运行")
+        self.run_button.setText("開始執行")
         self.run_button.setEnabled(True)
         self.overview.setText("●  已停止")
         self.overview.setStyleSheet("color: #a9bad4; font-weight: 600;")
         self.url.setEnabled(True)
         self.log_path.setEnabled(True)
-        self.add_event("程序已停止", False)
+        self.add_event("程式已停止", False)
 
     def update_status(self, state: dict) -> None:
-        titles = {"game": "游戏", "log": "日志", "phase": "回合", "capture": "捕获", "vision": "识别", "template": "画面模板", "reason": "判断原因", "mode": "模式"}
+        titles = {"game": "遊戲", "log": "日誌", "phase": "回合", "capture": "捕獲", "vision": "辨識", "template": "畫面模板", "reason": "判斷原因", "mode": "模式"}
         for key, value in state.items():
             self.status_labels[key].setText(f"{titles[key]}：{value}")
 

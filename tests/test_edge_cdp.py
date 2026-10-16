@@ -27,4 +27,4 @@ def test_pause_checks_video_state(monkeypatch, tmp_path):
     browser = EdgeDevTools(tmp_path)
     monkeypatch.setattr(browser, "find_page", lambda _url: {"id": "threads"})
     monkeypatch.setattr(browser, "_command", lambda *_args: {"result": {"value": {"found": 1, "paused": 1}}})
-    assert browser.pause_video("https://www.threads.com/") == (True, "已暂停Threads页面中的 1 个视频")
+    assert browser.pause_video("https://www.threads.com/") == (True, "已暫停Threads頁面中的 1 個影片")

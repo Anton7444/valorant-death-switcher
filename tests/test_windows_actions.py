@@ -36,11 +36,11 @@ def test_foreground_refusal_is_reported_without_stopping_observer(monkeypatch):
     messages = []
     signals = SimpleNamespace(event=SimpleNamespace(emit=lambda message, alert: messages.append((message, alert))))
     worker = Worker(Settings(actions_enabled=True), signals)
-    monkeypatch.setattr(worker.edge, "open_or_activate", lambda _url: (False, "Windows 拒绝激活 Chrome 窗口"))
+    monkeypatch.setattr(worker.edge, "open_or_activate", lambda _url: (False, "Windows 拒絕啟用 Chrome 視窗"))
     worker._handle_actions(["open_edge"], None)
     assert len(messages) == 1
     assert messages[0][1]
-    assert "Windows 拒绝激活" in messages[0][0]
+    assert "Windows 拒絕啟用" in messages[0][0]
 
 
 def test_first_edge_launch_uses_controllable_maximized_window(monkeypatch, tmp_path):
@@ -114,8 +114,8 @@ def test_pause_confirms_page_video_paused(monkeypatch):
     edge.url = "https://www.threads.com/"
     edge.hwnd = 456
     monkeypatch.setattr(edge.devtools, "_read_port", lambda: 12345)
-    monkeypatch.setattr(edge.devtools, "pause_video", lambda _url: (True, "已暂停Threads页面中的 1 个视频"))
-    assert edge.pause_video() == (True, "已暂停Threads页面中的 1 个视频")
+    monkeypatch.setattr(edge.devtools, "pause_video", lambda _url: (True, "已暫停Threads頁面中的 1 個影片"))
+    assert edge.pause_video() == (True, "已暫停Threads頁面中的 1 個影片")
 
 
 def test_failed_focus_places_edge_on_top_and_later_clears_it(monkeypatch):
@@ -128,7 +128,7 @@ def test_failed_focus_places_edge_on_top_and_later_clears_it(monkeypatch):
     monkeypatch.setattr(windows.win32gui, "SetWindowPos", lambda *args: calls.append(args))
     ok, message = edge._focus(opened=False)
     assert not ok
-    assert "置顶" in message
+    assert "置頂" in message
     assert calls[0][1] == windows.win32con.HWND_TOPMOST
     edge.release_topmost()
     assert calls[1][1] == windows.win32con.HWND_NOTOPMOST
@@ -150,7 +150,7 @@ def test_return_pauses_edge_before_game_activation(monkeypatch):
     signals = SimpleNamespace(event=SimpleNamespace(emit=lambda *_args: None))
     worker = Worker(Settings(actions_enabled=True), signals)
     worker.edge.hwnd = 456
-    monkeypatch.setattr(worker.edge, "pause_video", lambda: (calls.append("pause") or True, "已发送"))
+    monkeypatch.setattr(worker.edge, "pause_video", lambda: (calls.append("pause") or True, "已傳送"))
     monkeypatch.setattr(worker.edge, "minimize_for_game", lambda: calls.append("minimize"))
     monkeypatch.setattr("valorant_switcher.app.find_game_for_restore", lambda _hwnd: 123)
     monkeypatch.setattr("valorant_switcher.app.is_game_foreground", lambda _hwnd: False)
@@ -165,12 +165,12 @@ def test_missing_game_does_not_minimize_edge(monkeypatch):
     signals = SimpleNamespace(event=SimpleNamespace(emit=lambda msg, _alert: messages.append(msg)))
     worker = Worker(Settings(actions_enabled=True), signals)
     worker.edge.hwnd = 456
-    monkeypatch.setattr(worker.edge, "pause_video", lambda: (True, "已暂停"))
+    monkeypatch.setattr(worker.edge, "pause_video", lambda: (True, "已暫停"))
     monkeypatch.setattr(worker.edge, "minimize_for_game", lambda: calls.append("minimize"))
     monkeypatch.setattr("valorant_switcher.app.find_game_for_restore", lambda _hwnd: None)
     worker._handle_actions(["return_game"], None)
     assert calls == []
-    assert any("Chrome 保持显示" in message for message in messages)
+    assert any("Chrome 保持顯示" in message for message in messages)
 
 
 def test_failed_game_activation_restores_edge(monkeypatch):
@@ -178,9 +178,9 @@ def test_failed_game_activation_restores_edge(monkeypatch):
     signals = SimpleNamespace(event=SimpleNamespace(emit=lambda *_args: None))
     worker = Worker(Settings(actions_enabled=True), signals)
     worker.edge.hwnd = 456
-    monkeypatch.setattr(worker.edge, "pause_video", lambda: (True, "已暂停"))
+    monkeypatch.setattr(worker.edge, "pause_video", lambda: (True, "已暫停"))
     monkeypatch.setattr(worker.edge, "minimize_for_game", lambda: calls.append("minimize"))
-    monkeypatch.setattr(worker.edge, "restore_after_failed_game_switch", lambda: (calls.append("restore") or True, "Chrome 已恢复"))
+    monkeypatch.setattr(worker.edge, "restore_after_failed_game_switch", lambda: (calls.append("restore") or True, "Chrome 已恢復"))
     monkeypatch.setattr("valorant_switcher.app.find_game_for_restore", lambda _hwnd: 123)
     monkeypatch.setattr("valorant_switcher.app.is_game_foreground", lambda _hwnd: False)
     monkeypatch.setattr("valorant_switcher.app.activate", lambda _hwnd, **_kwargs: calls.append("activate") or False)

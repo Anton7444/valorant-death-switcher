@@ -21,7 +21,7 @@ TEMPLATES = ROOT / "src" / "valorant_switcher" / "templates"
 def read_sample(name: str) -> np.ndarray:
     path = SAMPLES / f"{name}.png"
     if not path.is_file():
-        pytest.skip(f"本机未提供 {path.name}")
+        pytest.skip(f"本機未提供 {path.name}")
     frame = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
     assert frame is not None
     return frame
@@ -90,7 +90,7 @@ def test_synthetic_1568_by_1080_fullscreen(name: str, expected: str) -> None:
 def test_scoreboard_is_not_death_when_sample_available() -> None:
     path = SAMPLES / "scoreboard.png"
     if not path.is_file():
-        pytest.skip("等待计分板原始截图")
+        pytest.skip("等待計分板原始截圖")
     result = TemplateDetector(TEMPLATES).classify(read_sample("scoreboard"))
     assert result.label != "dead", result
 

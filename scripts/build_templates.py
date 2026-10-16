@@ -37,12 +37,12 @@ def main() -> None:
         path = SAMPLES / source
         frame = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
         if frame is None or frame.shape[:2] != (REF_H, REF_W):
-            raise ValueError(f"截图缺失或不是 1920×1080：{path}")
+            raise ValueError(f"截圖缺失或不是 1920×1080：{path}")
         x1, y1, x2, y2 = box
         patch = cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
         result, encoded = cv2.imencode(".png", patch)
         if not result:
-            raise RuntimeError(f"无法编码模板 {name}")
+            raise RuntimeError(f"無法編碼模板 {name}")
         file_name = f"{name}.png"
         encoded.tofile(str(OUTPUT / file_name))
         manifest["templates"].append({
@@ -56,7 +56,7 @@ def main() -> None:
     (OUTPUT / "templates.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(f"已生成 {len(SPECS)} 个不含玩家姓名的 UI 模板：{OUTPUT}")
+    print(f"已生成 {len(SPECS)} 個不含玩家姓名的 UI 模板：{OUTPUT}")
 
 
 if __name__ == "__main__":

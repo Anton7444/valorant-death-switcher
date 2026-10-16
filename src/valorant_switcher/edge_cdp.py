@@ -32,7 +32,7 @@ class EdgeDevTools:
             self.port = port
             version = self._request("/json/version")
             if urlparse(version.get("webSocketDebuggerUrl", "")).path != lines[1].strip():
-                raise DevToolsError("Chrome 调试端口与专用资料目录不匹配")
+                raise DevToolsError("Chrome 除錯埠與專用資料目錄不匹配")
             return port
         except (OSError, ValueError, IndexError, AttributeError, DevToolsError):
             self.port = None
@@ -48,7 +48,7 @@ class EdgeDevTools:
 
     def _request(self, path: str, *, method: str = "GET"):
         if self.port is None:
-            raise DevToolsError("Chrome 调试端口不可用")
+            raise DevToolsError("Chrome 除錯埠不可用")
         try:
             request = Request(f"http://127.0.0.1:{self.port}{path}", method=method)
             with self._opener.open(request, timeout=2) as response:
@@ -58,7 +58,7 @@ class EdgeDevTools:
                 except ValueError:
                     return body
         except (OSError, ValueError) as exc:
-            raise DevToolsError(f"Chrome 页面连接失败：{exc}") from exc
+            raise DevToolsError(f"Chrome 頁面連線失敗：{exc}") from exc
 
     def pages(self) -> list[dict]:
         return [item for item in self._request("/json/list") if item.get("type") == "page"]
@@ -88,7 +88,7 @@ class EdgeDevTools:
     def _command(page: dict, method: str, params: dict | None = None) -> dict:
         address = page.get("webSocketDebuggerUrl")
         if not address:
-            raise DevToolsError("Chrome 页面没有调试连接")
+            raise DevToolsError("Chrome 頁面沒有除錯連線")
         try:
             connection = websocket.create_connection(address, timeout=2, suppress_origin=True)
             try:
@@ -102,12 +102,12 @@ class EdgeDevTools:
             finally:
                 connection.close()
         except (OSError, ValueError, websocket.WebSocketException) as exc:
-            raise DevToolsError(f"Chrome 页面命令失败：{exc}") from exc
+            raise DevToolsError(f"Chrome 頁面命令失敗：{exc}") from exc
 
     def pause_video(self, url: str) -> tuple[bool, str]:
         page = self.find_page(url)
         if page is None:
-            return False, "Threads标签已关闭，无法暂停视频"
+            return False, "Threads標籤已關閉，無法暫停影片"
         expression = """(() => {
           const videos = new Set();
           function scan(root) {
@@ -133,17 +133,17 @@ class EdgeDevTools:
         })()"""
         result = self._command(page, "Runtime.evaluate", {"expression": expression, "returnByValue": True})
         if "exceptionDetails" in result:
-            return False, "Threads页面拒绝暂停命令"
+            return False, "Threads頁面拒絕暫停命令"
         value = result.get("result", {}).get("value", {})
         found = value.get("found", 0)
         paused = value.get("paused", 0)
         if value.get("resumeQueued"):
             self.paused_page_id = page["id"]
         if found and paused == found:
-            return True, f"已暂停Threads页面中的 {found} 个视频"
+            return True, f"已暫停Threads頁面中的 {found} 個影片"
         if not found:
-            return False, "Threads页面当前没有可暂停的视频"
-        return False, f"Threads页面有 {found} 个视频，仅 {paused} 个已暂停"
+            return False, "Threads頁面目前沒有可暫停的影片"
+        return False, f"Threads頁面有 {found} 個影片，僅 {paused} 個已暫停"
 
     def resume_video(self, url: str) -> tuple[bool, str]:
         if self.paused_page_id is None:
@@ -189,13 +189,13 @@ class EdgeDevTools:
             "awaitPromise": True, "userGesture": True,
         })
         if "exceptionDetails" in result:
-            return False, "视频自动播放失败：页面脚本报错"
+            return False, "影片自動播放失敗：頁面指令碼報錯"
         value = result.get("result", {}).get("value", {})
         state = value.get("state")
         if state == "playing":
             self.paused_page_id = None
-            return True, "已恢复上次播放的视频"
+            return True, "已恢復上次播放的影片"
         if state == "missing":
             self.paused_page_id = None
-            return False, "原视频已离开页面，无法自动恢复播放"
-        return False, "视频未能自动恢复播放"
+            return False, "原影片已離開頁面，無法自動恢復播放"
+        return False, "影片未能自動恢復播放"
